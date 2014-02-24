@@ -6,18 +6,18 @@ ENV['UNICORN_ENABLE_OOBGC'] ||= "1"
 discourse_path = File.expand_path(File.expand_path(File.dirname(__FILE__)) + "/../")
 
 # tune down if not enough ram
-worker_processes (ENV["UNICORN_WORKERS"] || 3).to_i
+worker_processes (3).to_i
 
 working_directory discourse_path
 
 # listen "#{discourse_path}/tmp/sockets/unicorn.sock"
-listen (ENV["UNICORN_PORT"] || 3000).to_i
+listen (3001).to_i
 
 # nuke workers after 30 seconds instead of 60 seconds (the default)
 timeout 30
 
 # feel free to point this anywhere accessible on the filesystem
-pid "#{discourse_path}/tmp/pids/unicorn.pid"
+pid "/tmp/unicorn.forum.pid"
 
 # By default, the Unicorn logger will write to stderr.
 # Additionally, some applications/frameworks log to stderr or stdout,
