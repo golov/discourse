@@ -11,7 +11,8 @@ worker_processes (3).to_i
 working_directory discourse_path
 
 # listen "#{discourse_path}/tmp/sockets/unicorn.sock"
-listen (3001).to_i
+listen "/tmp/forum.socket", :backlog => 64
+
 
 # nuke workers after 30 seconds instead of 60 seconds (the default)
 timeout 30
