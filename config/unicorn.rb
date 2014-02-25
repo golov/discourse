@@ -6,7 +6,7 @@ ENV['UNICORN_ENABLE_OOBGC'] ||= "1"
 discourse_path = File.expand_path(File.expand_path(File.dirname(__FILE__)) + "/../")
 
 # tune down if not enough ram
-worker_processes (3).to_i
+worker_processes (2).to_i
 
 working_directory discourse_path
 
