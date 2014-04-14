@@ -47,7 +47,7 @@ class Search
     @limit = Search.per_facet * Search.facets.size
     @results = GroupedSearchResults.new(@opts[:type_filter])
 
-    if Topic === @search_context && @search_context.posts_count < SiteSetting.min_posts_for_search_in_topic
+    if @search_context.is_a?(Topic) && @search_context.posts_count < SiteSetting.min_posts_for_search_in_topic
       @search_context = nil
     end
   end
@@ -86,6 +86,9 @@ class Search
 
       add_more_topics_if_expected
       @results
+    rescue ActiveRecord::StatementInvalid
+      # In the event of a PG:Error return nothing, it is likely they used a foreign language whose
+      # locale is not supported by postgres
     end
 
     # Add more topics if we expected them

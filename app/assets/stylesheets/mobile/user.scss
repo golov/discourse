@@ -1,6 +1,4 @@
 // styles that apply to the user page
-@import "../common/foundation/variables";
-@import "../common/foundation/mixins";
 
 .user-preferences {
   .control-group {
@@ -64,6 +62,17 @@
     width: 100%;
     padding: 5px 8px;
   }
+
+  #profile-background-preview {
+    height: 150px;
+    background-position: center center;
+    background-size: cover;
+    background-color: $secondary_background_color;
+  }
+
+  .bio-composer #wmd-quote-post {
+    display: none;
+  }
 }
 
 #about-me {
@@ -120,6 +129,8 @@
 
   .about {
     background-color: $secondary_background_color;
+    background-position: center center;
+    background-size: cover;
     margin-bottom: 10px;
     overflow: hidden;
     color: $primary_text_color;
@@ -166,7 +177,7 @@
 
     .controls {
       background-color: lighten($secondary_background_color, 60%);
-      margin-top: 0px;
+      margin-top: 0;
       padding: 10px 10px 0 10px;
 
       .btn {
@@ -215,7 +226,7 @@
 
   .user-stream {
     .excerpt {
-      margin: 5px 0px;
+      margin: 5px 0;
       font-size: 13px;
       word-wrap: break-word;
       color: lighten($primary_text_color, 30%);

@@ -437,11 +437,15 @@
   };
 
   function escapeHTML( text ) {
-    return text.replace( /&/g, "&amp;" )
-               .replace( /</g, "&lt;" )
-               .replace( />/g, "&gt;" )
-               .replace( /"/g, "&quot;" )
-               .replace( /'/g, "&#39;" );
+    if (text && text.length > 0) {
+      return text.replace( /&/g, "&amp;" )
+                 .replace( /</g, "&lt;" )
+                 .replace( />/g, "&gt;" )
+                 .replace( /"/g, "&quot;" )
+                 .replace( /'/g, "&#39;" );
+    } else {
+      return "";
+    }
   }
 
   function render_tree( jsonml ) {
@@ -1007,18 +1011,20 @@
               var contents = this.processBlock(li_accumulate, []),
                   firstBlock = contents[0];
 
-              firstBlock.shift();
-              contents.splice.apply(contents, [0, 1].concat(firstBlock));
-              add( last_li, loose, contents, nl );
+              if (firstBlock) {
+                firstBlock.shift();
+                contents.splice.apply(contents, [0, 1].concat(firstBlock));
+                add( last_li, loose, contents, nl );
 
-              // Let's not creating a trailing \n after content in the li
-              if(last_li[last_li.length-1] === "\n") {
-                last_li.pop();
+                // Let's not creating a trailing \n after content in the li
+                if(last_li[last_li.length-1] === "\n") {
+                  last_li.pop();
+                }
+
+                // Loose mode will have been dealt with. Reset it
+                loose = false;
+                li_accumulate = "";
               }
-
-              // Loose mode will have been dealt with. Reset it
-              loose = false;
-              li_accumulate = "";
             }
 
             // Look at the next block - we might have a loose list. Or an extra

@@ -5,10 +5,12 @@ require_dependency 'custom_renderer'
 require_dependency 'archetype'
 require_dependency 'rate_limiter'
 require_dependency 'crawler_detection'
+require_dependency 'json_error'
 
 class ApplicationController < ActionController::Base
   include CurrentUser
   include CanonicalURL::ControllerExtensions
+  include JsonError
 
   serialization_scope :guardian
 
@@ -86,7 +88,13 @@ class ApplicationController < ActionController::Base
 
   rescue_from Discourse::NotLoggedIn do |e|
     raise e if Rails.env.test?
-    redirect_to "/"
+
+    if request.get?
+      redirect_to "/"
+    else
+      render status: 403, json: failed_json.merge(message: I18n.t(:not_logged_in))
+    end
+
   end
 
   rescue_from Discourse::NotFound do
@@ -94,21 +102,21 @@ class ApplicationController < ActionController::Base
   end
 
   rescue_from Discourse::InvalidAccess do
-    rescue_discourse_actions("[error: 'invalid access']", 403) # TODO: this breaks json responses
+    rescue_discourse_actions("[error: 'invalid access']", 403, true) # TODO: this breaks json responses
   end
 
   rescue_from Discourse::ReadOnly do
     render status: 405, json: failed_json.merge(message: I18n.t("read_only_mode_enabled"))
   end
 
-  def rescue_discourse_actions(message, error)
+  def rescue_discourse_actions(message, error, include_ember=false)
     if request.format && request.format.json?
       # TODO: this doesn't make sense. Stuffing an html page into a json response will cause
       #       $.parseJSON to fail in the browser. Also returning text like "[error: 'invalid access']"
       #       from the above rescue_from blocks will fail because that isn't valid json.
       render status: error, layout: false, text: (error == 404) ? build_not_found_page(error) : message
     else
-      render text: build_not_found_page(error, 'no_js')
+      render text: build_not_found_page(error, include_ember ? 'application' : 'no_js')
     end
   end
 
@@ -215,7 +223,7 @@ class ApplicationController < ActionController::Base
   private
 
     def preload_anonymous_data
-      store_preloaded("site", Site.cached_json(guardian))
+      store_preloaded("site", Site.json_for(guardian))
       store_preloaded("siteSettings", SiteSetting.client_settings_json)
       store_preloaded("customHTML", custom_html_json)
     end
@@ -236,11 +244,7 @@ class ApplicationController < ActionController::Base
     end
 
     def render_json_error(obj)
-      if obj.present?
-        render json: MultiJson.dump(errors: obj.errors.full_messages), status: 422
-      else
-        render json: MultiJson.dump(errors: [I18n.t('js.generic_error')]), status: 422
-      end
+      render json: MultiJson.dump(create_errors_json(obj)), status: 422
     end
 
     def success_json

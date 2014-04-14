@@ -7,6 +7,7 @@
   @module Discourse
 **/
 Discourse.DiscoveryTopicsController = Discourse.DiscoveryController.extend({
+  needs: ['discovery'],
   bulkSelectEnabled: false,
   selected: [],
 
@@ -25,6 +26,9 @@ Discourse.DiscoveryTopicsController = Discourse.DiscoveryController.extend({
       var filter = this.get('model.filter'),
           self = this;
 
+      // Don't refresh if we're still loading
+      if (this.get('controllers.discovery.loading')) { return; }
+
       this.send('loading');
       Discourse.TopicList.find(filter).then(function(list) {
         self.setProperties({ model: list, selected: [] });
@@ -41,6 +45,15 @@ Discourse.DiscoveryTopicsController = Discourse.DiscoveryController.extend({
     toggleBulkSelect: function() {
       this.toggleProperty('bulkSelectEnabled');
       this.get('selected').clear();
+    },
+
+    resetNew: function() {
+      var self = this;
+
+      Discourse.TopicTrackingState.current().resetNew();
+      Discourse.Topic.resetNew().then(function() {
+        self.send('refresh');
+      });
     },
 
     dismissRead: function() {
@@ -66,6 +79,10 @@ Discourse.DiscoveryTopicsController = Discourse.DiscoveryController.extend({
 
   showDismissRead: function() {
     return this.get('filter') === 'unread' && this.get('topics.length') > 0;
+  }.property('filter', 'topics.length'),
+
+  showResetNew: function() {
+    return this.get('filter') === 'new' && this.get('topics.length') > 0;
   }.property('filter', 'topics.length'),
 
   canBulkSelect: Em.computed.alias('currentUser.staff'),

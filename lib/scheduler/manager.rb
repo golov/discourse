@@ -4,6 +4,8 @@
 # 2. No stats about previous runs or failures
 # 3. Dependency on ice_cube gem causes runaway CPU
 
+require_dependency 'distributed_mutex'
+
 module Scheduler
   class Manager
     attr_accessor :random_ratio, :redis
@@ -184,7 +186,11 @@ module Scheduler
         return unless key
         if due.to_i <= Time.now.to_i
           klass = get_klass(key)
-          return unless klass
+          unless klass
+            # corrupt key, nuke it (renamed job or something)
+            redis.zrem Manager.queue_key, key
+            return
+          end
           info = schedule_info(klass)
           info.prev_run = Time.now.to_i
           info.prev_result = "QUEUED"
@@ -216,33 +222,9 @@ module Scheduler
     end
 
     def lock
-      got_lock = false
-      lock_key = Manager.lock_key
-
-      while(!got_lock)
-        begin
-          if redis.setnx lock_key, Time.now.to_i + 60
-            redis.expire lock_key, 60
-            got_lock = true
-          else
-            begin
-              redis.watch lock_key
-              time = redis.get Manager.lock_key
-              if time && time.to_i < Time.now.to_i
-                got_lock = redis.multi do
-                  redis.set Manager.lock_key, Time.now.to_i + 60
-                end
-              end
-            ensure
-              redis.unwatch
-            end
-          end
-
-        end
+      DistributedMutex.new(Manager.lock_key).synchronize do
+        yield
       end
-      yield
-    ensure
-      redis.del Manager.lock_key
     end
 
 
